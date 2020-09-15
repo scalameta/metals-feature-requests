@@ -1,0 +1,26 @@
+name: Publish summary
+
+on:
+  issues:
+    types: [opened, closed, transferred, reopened, deleted, edited]
+    schedule:
+      - cron: "0 * * * *"
+
+jobs:
+  publish-summary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate feature requests summary
+        uses: scalameta/metals-feature-requests@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+        id: generate_feature_requests_summary
+
+      - name: Update feature requests comment
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          repository: scalameta/metals
+          comment-id: 488311466
+          body:
+            ${{ steps.generate_feature_requests_summary.outputs.comment-body }}
+          edit-mode: replace
