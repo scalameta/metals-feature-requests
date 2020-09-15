@@ -13,7 +13,7 @@ jobs:
       - name: Generate feature requests summary
         uses: scalameta/metals-feature-requests@v1
         with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ secrets.SCALAMETA_BOT_GITHUB_TOKEN }}
         id: generate_feature_requests_summary
 
       - name: Update feature requests comment
