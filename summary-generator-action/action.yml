@@ -1,0 +1,9 @@
+name: metals-feature-requests
+author: scalameta
+description:
+  "Github Action that summarizes Metals feature requrests in a dedicated issue"
+inputs:
+  repo-token:
+outputs:
+  comment-body:
+    description: "Feature requests summary table in markdown format"
