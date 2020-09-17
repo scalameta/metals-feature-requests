@@ -5,8 +5,12 @@ import { taskEither } from "fp-ts";
 import { TaskEither } from "fp-ts/TaskEither";
 import { pipe, flow } from "fp-ts/function";
 import * as core from "@actions/core";
+import { Headers } from "cross-fetch";
 
 const githubToken = core.getInput("repo-token");
+
+// @ts-ignore
+global.Headers = global.Headers || Headers;
 
 const graphqlClient = new GraphQLClient("https://api.github.com/graphql", {
   headers: {

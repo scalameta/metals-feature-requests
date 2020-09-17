@@ -14,7 +14,10 @@ var PathReporter_1 = __webpack_require__(2985);
 var fp_ts_1 = __webpack_require__(5187);
 var function_1 = __webpack_require__(6985);
 var core = __webpack_require__(2186);
+var cross_fetch_1 = __webpack_require__(9805);
 var githubToken = core.getInput("repo-token");
+// @ts-ignore
+global.Headers = global.Headers || cross_fetch_1.Headers;
 var graphqlClient = new graphql_request_1.GraphQLClient("https://api.github.com/graphql", {
     headers: {
         Authorization: "bearer " + githubToken,
