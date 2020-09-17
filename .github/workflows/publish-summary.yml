@@ -13,13 +13,14 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Generate feature requests summary
-        uses: ./summary-generator-action
+        uses: ./.github/actions/summary-generator
         id: generate_feature_requests_summary
 
       - name: Update feature requests comment
         uses: peter-evans/create-or-update-comment@v1
         with:
           repository: scalameta/metals
+          # https://github.com/scalameta/metals/issues/707#issuecomment-488311466
           comment-id: 488311466
           body:
             ${{ steps.generate_feature_requests_summary.outputs.comment-body }}
