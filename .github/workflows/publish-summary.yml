@@ -14,8 +14,6 @@ jobs:
 
       - name: Generate feature requests summary
         uses: ./summary-generator-action
-        with:
-          repo-token: ${{ secrets.SCALAMETA_BOT_GITHUB_TOKEN }}
         id: generate_feature_requests_summary
 
       - name: Update feature requests comment
@@ -26,3 +24,4 @@ jobs:
           body:
             ${{ steps.generate_feature_requests_summary.outputs.comment-body }}
           edit-mode: replace
+          token: ${{ secrets.SCALAMETA_BOT_GITHUB_TOKEN }}
