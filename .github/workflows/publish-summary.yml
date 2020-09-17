@@ -10,6 +10,8 @@ jobs:
   publish-summary:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
+
       - name: Generate feature requests summary
         uses: ./summary-generator-action
         with:
