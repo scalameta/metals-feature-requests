@@ -9,3 +9,6 @@ inputs:
 outputs:
   comment-body:
     description: "Feature requests summary table in markdown format"
+runs:
+  using: "node12"
+  main: "dist/index.js"
