@@ -25,4 +25,4 @@ jobs:
           body:
             ${{ steps.generate_feature_requests_summary.outputs.comment-body }}
           edit-mode: replace
-          token: ${{ secrets.SCALAMETA_BOT_GITHUB_TOKEN }}
+          token: ${{ secrets.SCALAMETA_BOT_GH_TOKEN }}
