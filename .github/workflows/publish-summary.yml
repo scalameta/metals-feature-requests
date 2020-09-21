@@ -3,8 +3,8 @@ name: Publish summary
 on:
   issues:
     types: [opened, closed, transferred, reopened, deleted, edited]
-    schedule:
-      - cron: "0 * * * *"
+  schedule:
+    - cron: "0 * * * *"
 
 jobs:
   publish-summary:
