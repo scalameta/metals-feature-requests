@@ -17,9 +17,13 @@ export const IssuesResponse = t.type(
   {
     repository: t.type({
       issues: t.type({
+        pageInfo: t.type({
+          hasNextPage: t.boolean,
+          endCursor: t.string
+        }),
         nodes: t.array(Issue)
       })
-    })
+    }),
   },
   "IssuesResponse"
 );

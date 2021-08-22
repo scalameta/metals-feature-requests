@@ -4,6 +4,7 @@ import { openIssues } from "./queries";
 import { taskEither } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import * as core from "@actions/core";
+import { TaskEither } from "fp-ts/lib/TaskEither";
 
 function generateBody(issues: Array<Issue>): string {
   return (
@@ -31,15 +32,30 @@ function generateBody(issues: Array<Issue>): string {
 }
 
 function run(): Promise<unknown> {
+
+  const getIssues = (endCursor?: string): TaskEither<string, Array<Issue>> => pipe(
+    query(openIssues(endCursor), {}, IssuesResponse),
+      taskEither.chain(({ repository }) => {
+        if (repository.issues.pageInfo.hasNextPage) {
+          return pipe(
+            getIssues(repository.issues.pageInfo.endCursor),
+            taskEither.map(issues => [...repository.issues.nodes, ...issues]),
+          );
+        } else {
+          return taskEither.right(repository.issues.nodes)
+        }
+      })
+    )
+
   return pipe(
-    query(openIssues, {}, IssuesResponse),
+    getIssues(),
     taskEither.bimap(
       (e) => {
         core.debug(e);
         core.setFailed(e);
       },
-      ({ repository }) => {
-        const commentBody = generateBody(repository.issues.nodes);
+      (issues) => {
+        const commentBody = generateBody(issues);
         core.setOutput("comment-body", commentBody);
       }
     )
@@ -47,19 +63,3 @@ function run(): Promise<unknown> {
 }
 
 run();
-
-// const updateFeaturesIssue = pipe(
-//   query(openIssues, {}, IssuesResponse),
-//   taskEither.chain(({ repository }) =>
-//     query(
-//       updateIssueComment,
-//       {
-//         // id of first comment on scalameta/metals#707
-//         commentId: "MDEyOklzc3VlQ29tbWVudDQ4ODMxMTQ2Ng==",
-//         body: generateBody(repository.issues.nodes),
-//       },
-//       t.type({})
-//     )
-//   ),
-//   taskEither.mapLeft((e) => console.error(e))
-// );
