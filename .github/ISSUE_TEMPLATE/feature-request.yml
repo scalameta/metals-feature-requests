@@ -1,6 +1,5 @@
 name: Feature request
 description: Create a feature request
-title: My feature request
 labels: []
 body:
   - type: textarea
