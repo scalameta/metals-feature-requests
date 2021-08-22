@@ -37,10 +37,17 @@ exports.query = function (query, values, responseType) {
 /***/ }),
 
 /***/ 4822:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
 
+var __spreadArrays = (this && this.__spreadArrays) || function () {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var graphql_1 = __webpack_require__(5157);
 var models_1 = __webpack_require__(4209);
@@ -70,31 +77,24 @@ function generateBody(issues) {
         "</sub>");
 }
 function run() {
-    return function_1.pipe(graphql_1.query(queries_1.openIssues, {}, models_1.IssuesResponse), fp_ts_1.taskEither.bimap(function (e) {
+    var getIssues = function (endCursor) { return function_1.pipe(graphql_1.query(queries_1.openIssues(endCursor), {}, models_1.IssuesResponse), fp_ts_1.taskEither.chain(function (_a) {
+        var repository = _a.repository;
+        if (repository.issues.pageInfo.hasNextPage) {
+            return function_1.pipe(getIssues(repository.issues.pageInfo.endCursor), fp_ts_1.taskEither.map(function (issues) { return __spreadArrays(repository.issues.nodes, issues); }));
+        }
+        else {
+            return fp_ts_1.taskEither.right(repository.issues.nodes);
+        }
+    })); };
+    return function_1.pipe(getIssues(), fp_ts_1.taskEither.bimap(function (e) {
         core.debug(e);
         core.setFailed(e);
-    }, function (_a) {
-        var repository = _a.repository;
-        var commentBody = generateBody(repository.issues.nodes);
+    }, function (issues) {
+        var commentBody = generateBody(issues);
         core.setOutput("comment-body", commentBody);
     }))();
 }
 run();
-// const updateFeaturesIssue = pipe(
-//   query(openIssues, {}, IssuesResponse),
-//   taskEither.chain(({ repository }) =>
-//     query(
-//       updateIssueComment,
-//       {
-//         // id of first comment on scalameta/metals#707
-//         commentId: "MDEyOklzc3VlQ29tbWVudDQ4ODMxMTQ2Ng==",
-//         body: generateBody(repository.issues.nodes),
-//       },
-//       t.type({})
-//     )
-//   ),
-//   taskEither.mapLeft((e) => console.error(e))
-// );
 
 
 /***/ }),
@@ -117,9 +117,13 @@ exports.Issue = t.type({
 exports.IssuesResponse = t.type({
     repository: t.type({
         issues: t.type({
+            pageInfo: t.type({
+                hasNextPage: t.boolean,
+                endCursor: t.string
+            }),
             nodes: t.array(exports.Issue)
         })
-    })
+    }),
 }, "IssuesResponse");
 
 
@@ -132,7 +136,10 @@ exports.IssuesResponse = t.type({
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.openIssues = void 0;
-exports.openIssues = "query OpenIssues {\n  repository(owner: \"scalameta\", name: \"metals-feature-requests\") {\n    issues(filterBy: { states: OPEN }, first: 100) {\n      nodes {\n        title,\n        url,\n        reactions(content: THUMBS_UP) {\n          totalCount\n        }\n      }\n    }\n  }\n}\n";
+exports.openIssues = function (after) {
+    var afterParam = after ? ", after: " + after : '';
+    return "query OpenIssues {\n  repository(owner: \"scalameta\", name: \"metals-feature-requests\") {\n    issues(filterBy: { states: OPEN }, first: 100 " + afterParam + ") {\n      pageInfo {\n        hasNextPage\n        endCursor\n      }\n      nodes {\n        title,\n        url,\n        reactions(content: THUMBS_UP) {\n          totalCount\n        }\n      }\n    }\n  }\n}\n";
+};
 
 
 /***/ }),
@@ -151,6 +158,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const os = __importStar(__webpack_require__(2087));
+const utils_1 = __webpack_require__(5278);
 /**
  * Commands
  *
@@ -204,28 +212,14 @@ class Command {
         return cmdStr;
     }
 }
-/**
- * Sanitizes an input into a string so it can be passed into issueCommand safely
- * @param input input to sanitize into a string
- */
-function toCommandValue(input) {
-    if (input === null || input === undefined) {
-        return '';
-    }
-    else if (typeof input === 'string' || input instanceof String) {
-        return input;
-    }
-    return JSON.stringify(input);
-}
-exports.toCommandValue = toCommandValue;
 function escapeData(s) {
-    return toCommandValue(s)
+    return utils_1.toCommandValue(s)
         .replace(/%/g, '%25')
         .replace(/\r/g, '%0D')
         .replace(/\n/g, '%0A');
 }
 function escapeProperty(s) {
-    return toCommandValue(s)
+    return utils_1.toCommandValue(s)
         .replace(/%/g, '%25')
         .replace(/\r/g, '%0D')
         .replace(/\n/g, '%0A')
@@ -259,6 +253,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const command_1 = __webpack_require__(7351);
+const file_command_1 = __webpack_require__(717);
+const utils_1 = __webpack_require__(5278);
 const os = __importStar(__webpack_require__(2087));
 const path = __importStar(__webpack_require__(5622));
 /**
@@ -285,9 +281,17 @@ var ExitCode;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function exportVariable(name, val) {
-    const convertedVal = command_1.toCommandValue(val);
+    const convertedVal = utils_1.toCommandValue(val);
     process.env[name] = convertedVal;
-    command_1.issueCommand('set-env', { name }, convertedVal);
+    const filePath = process.env['GITHUB_ENV'] || '';
+    if (filePath) {
+        const delimiter = '_GitHubActionsFileCommandDelimeter_';
+        const commandValue = `${name}<<${delimiter}${os.EOL}${convertedVal}${os.EOL}${delimiter}`;
+        file_command_1.issueCommand('ENV', commandValue);
+    }
+    else {
+        command_1.issueCommand('set-env', { name }, convertedVal);
+    }
 }
 exports.exportVariable = exportVariable;
 /**
@@ -303,7 +307,13 @@ exports.setSecret = setSecret;
  * @param inputPath
  */
 function addPath(inputPath) {
-    command_1.issueCommand('add-path', {}, inputPath);
+    const filePath = process.env['GITHUB_PATH'] || '';
+    if (filePath) {
+        file_command_1.issueCommand('PATH', inputPath);
+    }
+    else {
+        command_1.issueCommand('add-path', {}, inputPath);
+    }
     process.env['PATH'] = `${inputPath}${path.delimiter}${process.env['PATH']}`;
 }
 exports.addPath = addPath;
@@ -462,6 +472,68 @@ function getState(name) {
 }
 exports.getState = getState;
 //# sourceMappingURL=core.js.map
+
+/***/ }),
+
+/***/ 717:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+// For internal use, subject to change.
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+// We use any as a valid input type
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const fs = __importStar(__webpack_require__(5747));
+const os = __importStar(__webpack_require__(2087));
+const utils_1 = __webpack_require__(5278);
+function issueCommand(command, message) {
+    const filePath = process.env[`GITHUB_${command}`];
+    if (!filePath) {
+        throw new Error(`Unable to find environment variable for file command ${command}`);
+    }
+    if (!fs.existsSync(filePath)) {
+        throw new Error(`Missing file at path: ${filePath}`);
+    }
+    fs.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os.EOL}`, {
+        encoding: 'utf8'
+    });
+}
+exports.issueCommand = issueCommand;
+//# sourceMappingURL=file-command.js.map
+
+/***/ }),
+
+/***/ 5278:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+// We use any as a valid input type
+/* eslint-disable @typescript-eslint/no-explicit-any */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+/**
+ * Sanitizes an input into a string so it can be passed into issueCommand safely
+ * @param input input to sanitize into a string
+ */
+function toCommandValue(input) {
+    if (input === null || input === undefined) {
+        return '';
+    }
+    else if (typeof input === 'string' || input instanceof String) {
+        return input;
+    }
+    return JSON.stringify(input);
+}
+exports.toCommandValue = toCommandValue;
+//# sourceMappingURL=utils.js.map
 
 /***/ }),
 
