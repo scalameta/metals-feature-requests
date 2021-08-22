@@ -137,7 +137,7 @@ exports.IssuesResponse = t.type({
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.openIssues = void 0;
 exports.openIssues = function (after) {
-    var afterParam = after ? ", after: " + after : '';
+    var afterParam = after ? ", after: \"" + after + "\"" : '';
     return "query OpenIssues {\n  repository(owner: \"scalameta\", name: \"metals-feature-requests\") {\n    issues(filterBy: { states: OPEN }, first: 100 " + afterParam + ") {\n      pageInfo {\n        hasNextPage\n        endCursor\n      }\n      nodes {\n        title,\n        url,\n        reactions(content: THUMBS_UP) {\n          totalCount\n        }\n      }\n    }\n  }\n}\n";
 };
 

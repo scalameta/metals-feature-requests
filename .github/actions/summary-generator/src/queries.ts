@@ -1,5 +1,5 @@
 export const openIssues = (after?: string) => {
-  const afterParam = after ? `, after: ${after}` : '';
+  const afterParam = after ? `, after: "${after}"` : '';
   return `query OpenIssues {
   repository(owner: "scalameta", name: "metals-feature-requests") {
     issues(filterBy: { states: OPEN }, first: 100 ${afterParam}) {
