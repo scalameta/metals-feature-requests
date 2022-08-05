@@ -23,7 +23,7 @@ body:
       required: true
   - type: textarea
     attributes:
-      label: Additional contex
+      label: Additional context
       description: Add any other context or screenshots about the feature request here.
   - type: input
     attributes:
