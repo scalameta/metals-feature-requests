@@ -13,7 +13,7 @@
     "typescript": "^4.0.2"
   },
   "dependencies": {
-    "@actions/core": "^1.2.6",
+    "@actions/core": "^1.9.1",
     "fp-ts": "^2.8.2",
     "graphql": "^15.3.0",
     "graphql-request": "^3.1.0",
