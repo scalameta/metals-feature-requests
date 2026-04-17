@@ -2,6 +2,7 @@
 
 This is the right place to report feature requests for Metals.
 
+
 The [scalameta/metals issue
 tracker](https://github.com/scalameta/metals/issues) is reserved for bug
 reports and issues that have an assigned milestone.
